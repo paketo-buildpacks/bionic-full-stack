@@ -294,11 +294,10 @@ jobs:
     needs: [ diff ]
     runs-on: ubuntu-22.04
     outputs:
-      build_packages_changed: ${{ steps.build-compare.outputs.build_packages_changed }}
-      run_packages_changed: ${{ steps.run-compare.outputs.run_packages_changed }}
+      packages_changed: ${{ steps.compare.outputs.packages_changed }}
     steps:
-    - name: Build Compare With Previous Release
-      id: build-compare
+    - name: Compare With Previous Release
+      id: compare
       run: |
         # shellcheck disable=SC2153
         build_added=$(jq '. | length' <<< "${BUILD_ADDED}")
@@ -308,20 +307,6 @@ jobs:
         build_modified=$(jq '. | length' <<< "${BUILD_MODIFIED}")
         echo "Build packages modified: ${build_modified}"
 
-        if [ "${build_added}" -eq 0 ] && [ "${build_modified}" -eq 0 ]; then
-          echo "No build packages changed."
-          echo "::set-output name=build_packages_changed::false"
-        else
-          echo "Build packages changed."
-          echo "::set-output name=build_packages_changed::true"
-        fi
-      env:
-        BUILD_ADDED: ${{ needs.diff.outputs.build_added }}
-        BUILD_MODIFIED: ${{ needs.diff.outputs.build_modified }}
-
-    - name: Run Compare With Previous Release
-      id: run-compare
-      run: |
         # shellcheck disable=SC2153
         run_added=$(jq '. | length' <<< "${RUN_ADDED}")
         echo "Run packages added: ${run_added}"
@@ -330,14 +315,17 @@ jobs:
         run_modified=$(jq '. | length' <<< "${RUN_MODIFIED}")
         echo "Run packages modified: ${run_modified}"
 
-        if [ "${run_added}" -eq 0 ] && [ "${run_modified}" -eq 0 ]; then
-          echo "No run packages changed."
-          echo "::set-output name=run_packages_changed::false"
+        if [ "${build_added}" -eq 0 ] && [ "${build_modified}" -eq 0 ] && [ "${run_added}" -eq 0 ] && [ "${run_modified}" -eq 0 ]; then
+          echo "No packages changed."
+          echo "::set-output name=packages_changed::false"
         else
-          echo "Run packages changed."
-          echo "::set-output name=run_packages_changed::true"
+          echo "Packages changed."
+          echo "::set-output name=packages_changed::true"
         fi
+
       env:
+        BUILD_ADDED: ${{ needs.diff.outputs.build_added }}
+        BUILD_MODIFIED: ${{ needs.diff.outputs.build_modified }}
         RUN_ADDED: ${{ needs.diff.outputs.run_added }}
         RUN_MODIFIED: ${{ needs.diff.outputs.run_modified }}
 
@@ -345,7 +333,7 @@ jobs:
     name: Run If Packages Changed
     runs-on: ubuntu-22.04
     needs: [packages_changed]
-    if: ${{ needs.packages_changed.outputs.build_packages_changed == 'true' || needs.packages_changed.outputs.run == 'true'  }}
+    if: ${{ needs.packages_changed.outputs.packages_changed == 'true' }}
     steps:
     - name: Run if packages changed
       run: |
