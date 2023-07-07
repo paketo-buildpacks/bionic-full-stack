@@ -1,5 +1,11 @@
 # Paketo Bionic Full Stack
 
+## ⚠️ This repository is archived. No further releases will be made! ⚠️
+
+## Use the [Paketo Jammy Full Stack](https://github.com/paketo-buildpacks/jammy-full-stack) instead.
+
+---
+
 ## What is a stack?
 See Paketo's [stacks documentation](https://paketo.io/docs/concepts/stacks/).
 
